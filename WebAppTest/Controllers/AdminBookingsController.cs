@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using WebAppTest.DTO;
 using WebAppTest.Services;
@@ -8,6 +9,7 @@ namespace WebAppTest.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
+[EnableCors("CORSSpecifications")]
 public class AdminBookingsController(IBookingService service) : ControllerBase
 {
     [HttpGet]

@@ -13,7 +13,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
             context.Response.StatusCode = (int)ex.StatusCode;
             context.Response.ContentType = "application/json";
 
-            var response = new { message = ex.Message };
+            var response = new {message = ex.Message};
             await context.Response.WriteAsJsonAsync(response);
         }
         catch (Exception ex)
@@ -23,7 +23,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             context.Response.ContentType = "application/json";
 
-            var response = new { message = "Внутренняя ошибка сервера" };
+            var response = new {message = "Внутренняя ошибка сервера"};
             await context.Response.WriteAsJsonAsync(response);
         }
     }

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTO;
 using WebAppTest.Entities;
@@ -11,10 +12,14 @@ public class ReviewService(AppDbContext context) : IReviewService
         var review = FromCreateDTO(dto);
         await context.Reviews.AddAsync(review);
         await context.SaveChangesAsync();
-        
+
+        var quest = (await context.Quests.FindAsync(review.QuestId))!;
+        await CountRating(quest);
+
+        review.Quest = quest;
         review.User = (await context.Users.FindAsync(review.UserId))!;
-        review.Quest = (await context.Quests.FindAsync(review.QuestId))!;
-        
+
+
         return ReviewDTO.ToDTO(review);
     }
 
@@ -23,6 +28,8 @@ public class ReviewService(AppDbContext context) : IReviewService
         var review = await context.Reviews.FindAsync(id);
         if (review == null) return false;
         context.Reviews.Remove(review);
+        var quest = (await context.Quests.FindAsync(review.QuestId))!;
+        await CountRating(quest);
         await context.SaveChangesAsync();
         return true;
     }
@@ -49,5 +56,12 @@ public class ReviewService(AppDbContext context) : IReviewService
             Date = DateTime.Now,
             Rating = dto.Rating
         };
+    }
+
+    private async Task CountRating(Quest quest)
+    {
+        var sum = await context.Reviews.Where(r => r.Quest == quest).SumAsync(r => r.Rating);
+        var num = await context.Reviews.Where(r => r.Quest == quest).CountAsync();
+        if (sum == 0 || num == 0) quest.Rating = (double)sum / num;
     }
 }

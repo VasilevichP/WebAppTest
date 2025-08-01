@@ -96,7 +96,16 @@ namespace WebAppTest.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Quests");
+                    b.ToTable("Quests", t =>
+                        {
+                            t.HasCheckConstraint("CK_Quest_DifficultyLevel", "DifficultyLevel >= 0 AND DifficultyLevel <= 5");
+
+                            t.HasCheckConstraint("CK_Quest_DurationNonNegative", "DurationMinutes >= 0");
+
+                            t.HasCheckConstraint("CK_Quest_FearLevel", "FearLevel >= 0 AND FearLevel <= 5");
+
+                            t.HasCheckConstraint("CK_Quest_MinParticipants", "MaxParticipants >= 1");
+                        });
                 });
 
             modelBuilder.Entity("WebAppTest.Entities.QuestPhoto", b =>
@@ -147,7 +156,10 @@ namespace WebAppTest.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", t =>
+                        {
+                            t.HasCheckConstraint("CK_Review_Rating", "Rating >= 0 AND Rating <= 10");
+                        });
                 });
 
             modelBuilder.Entity("WebAppTest.Entities.User", b =>
@@ -188,7 +200,12 @@ namespace WebAppTest.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", t =>
+                        {
+                            t.HasCheckConstraint("CK_User_Email_Format", "Email LIKE '%_@__%.__%'");
+
+                            t.HasCheckConstraint("CK_User_Phone_Format", "Phone LIKE '+%' AND LENGTH(Phone) >= 10");
+                        });
                 });
 
             modelBuilder.Entity("WebAppTest.Entities.Booking", b =>

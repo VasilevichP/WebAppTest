@@ -35,6 +35,22 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("UserDatabase")));
 
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CORSSpecifications",
+        policy =>
+        {
+            policy
+                .WithOrigins("http://localhost:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        });
+});
+
+builder.Logging.AddConsole();
+
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -50,7 +66,9 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseCors("CORSSpecifications");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -14,7 +14,7 @@ public class Quest
     public bool HasActors { get; set; }
     public int FearLevel { get; set; }
     public double Rating { get; set; }
-    public ICollection<QuestPhoto> Photos { get; set; } = new List<QuestPhoto>();
+    public ICollection<QuestPhoto> Photos { get; set; } = new List<QuestPhoto>(6);
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
 }

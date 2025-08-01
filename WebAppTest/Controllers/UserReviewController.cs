@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WebAppTest.DTO;
@@ -11,6 +12,7 @@ namespace WebAppTest.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "User")]
+[EnableCors("CORSSpecifications")]
 public class UserReviewController(IReviewService service) : ControllerBase
 {
     [HttpPost]

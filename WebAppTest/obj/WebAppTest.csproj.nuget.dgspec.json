@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Work\\c_sharp\\CarsAppTest\\Backend\\WebAppTest\\WebAppTest.csproj": {}
+    "D:\\Work\\c_sharp\\QuestsAppTest\\Backend\\WebAppTest\\WebAppTest.csproj": {}
   },
   "projects": {
-    "D:\\Work\\c_sharp\\CarsAppTest\\Backend\\WebAppTest\\WebAppTest.csproj": {
+    "D:\\Work\\c_sharp\\QuestsAppTest\\Backend\\WebAppTest\\WebAppTest.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Work\\c_sharp\\CarsAppTest\\Backend\\WebAppTest\\WebAppTest.csproj",
+        "projectUniqueName": "D:\\Work\\c_sharp\\QuestsAppTest\\Backend\\WebAppTest\\WebAppTest.csproj",
         "projectName": "WebAppTest",
-        "projectPath": "D:\\Work\\c_sharp\\CarsAppTest\\Backend\\WebAppTest\\WebAppTest.csproj",
+        "projectPath": "D:\\Work\\c_sharp\\QuestsAppTest\\Backend\\WebAppTest\\WebAppTest.csproj",
         "packagesPath": "C:\\Users\\Полина\\.nuget\\packages\\",
-        "outputPath": "D:\\Work\\c_sharp\\CarsAppTest\\Backend\\WebAppTest\\obj\\",
+        "outputPath": "D:\\Work\\c_sharp\\QuestsAppTest\\Backend\\WebAppTest\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Полина\\AppData\\Roaming\\NuGet\\NuGet.Config"

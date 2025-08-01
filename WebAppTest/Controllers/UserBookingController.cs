@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using WebAppTest.DTO;
 using WebAppTest.Entities;
@@ -10,6 +11,7 @@ namespace WebAppTest.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "User")]
+[EnableCors("CORSSpecifications")]
 public class UserBookingController(IBookingService service):ControllerBase
 {
     [HttpPost("book")]
