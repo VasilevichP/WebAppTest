@@ -1,8 +1,10 @@
+using System.Net;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTO;
 using WebAppTest.Entities;
+using WebAppTest.Exceptions;
 
 namespace WebAppTest.Services;
 
@@ -35,15 +37,17 @@ public class UserService(AppDbContext context) : IUserService
     public async Task<UserProfileDTO?> GetProfileAsync(Guid userId)
     {
         var user = await GetUserAsync(userId);
-
-        return user == null ? null : ToProfileDTO(user);
+        if (user == null) 
+            throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
+        return ToProfileDTO(user);
     }
 
-    public async Task<UserAdminDTO?> GetProfileForAdminAsync(Guid userId)
+    public async Task<UserAdminDTO> GetProfileForAdminAsync(Guid userId)
     {
         var user = await GetUserAsync(userId);
-
-        return user == null ? null : ToProfileForAdminDTO(user);
+        if (user == null) 
+            throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
+        return ToProfileForAdminDTO(user);
     }
 
     private async Task<User?> GetUserAsync(Guid id)
@@ -61,7 +65,8 @@ public class UserService(AppDbContext context) : IUserService
             .Include(u => u.Bookings).ThenInclude(b => b.Quest)
             .Include(u => u.Reviews).ThenInclude(r => r.Quest)
             .FirstOrDefaultAsync(u => u.Id == userId);
-        if (user == null) return null;
+        if (user == null) 
+            throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
 
         FromUpdateDTO(user, dto);
         await context.SaveChangesAsync();
@@ -72,7 +77,8 @@ public class UserService(AppDbContext context) : IUserService
     public async Task<bool> DeleteProfileAsync(Guid userId)
     {
         var user = await context.Users.FindAsync(userId);
-        if (user == null) return false;
+        if (user == null) 
+            throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
 
         context.Users.Remove(user);
         await context.SaveChangesAsync();

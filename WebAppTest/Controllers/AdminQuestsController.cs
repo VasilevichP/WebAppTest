@@ -15,23 +15,22 @@ public class AdminQuestsController(IQuestService questService) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        Console.WriteLine("in get all quests");
         var quests = await questService.GetAsync();
-        return (quests.Any()) ? Ok(quests) : NotFound("На данный момент квестов нет");
+        return Ok(quests);
     }
     
     [HttpPost("filter")]
     public async Task<IActionResult> GetAllFiltered([FromBody] FilterQuestDTO filter)
     {
         var quests = await questService.GetFilteredAsync(filter);
-        return (quests.Any()) ? Ok(quests) : NotFound("Не найдено подходящих квестов");
+        return Ok(quests);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> Get(Guid id)
     {
         var quest = await questService.GetByIdAsync(id);
-        return quest == null ? NotFound("Квест не найден") : Ok(quest);
+        return Ok(quest);
     }
 
     [HttpPost]
@@ -45,13 +44,13 @@ public class AdminQuestsController(IQuestService questService) : ControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] QuestUpdateCreateDTO dto)
     {
         var updated = await questService.UpdateAsync(id, dto);
-        return (updated is null) ? NotFound("Квест не найден") : Ok(updated);
+        return Ok(updated);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await questService.DeleteAsync(id);
-        return deleted ? Ok("Квест был удален") : NotFound("Квест не найден");
+        return Ok("Квест был удален");
     }
 }

@@ -31,6 +31,6 @@ public class AdminProfileController(IUserService userService) : ControllerBase
     public async Task<IActionResult> GetProfile(Guid userId)
     {
         var profile = await userService.GetProfileForAdminAsync(userId);
-        return (profile == null) ? NotFound("Профиль пользователя не найден") : Ok(profile);
+        return Ok(profile);
     }
 }

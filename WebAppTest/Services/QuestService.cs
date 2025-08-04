@@ -1,8 +1,10 @@
+using System.Net;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTO;
 using WebAppTest.Entities;
 using WebAppTest.Enums;
+using WebAppTest.Exceptions;
 
 namespace WebAppTest.Services;
 
@@ -11,7 +13,6 @@ public class QuestService(AppDbContext context) : IQuestService
     public async Task<List<QuestBriefDTO>> GetAsync()
     {
         var quests = await context.Quests.ToListAsync();
-
         return quests.Select(ToBriefDTO).ToList();
     }
 
@@ -34,11 +35,8 @@ public class QuestService(AppDbContext context) : IQuestService
         if (filter.MaxDuration.HasValue)
             query = query.Where(q => q.DurationMinutes <= filter.MaxDuration.Value);
 
-        if (filter.MinFearLevel.HasValue)
-            query = query.Where(q => q.FearLevel >= filter.MinFearLevel.Value);
-
-        if (filter.MaxFearLevel.HasValue)
-            query = query.Where(q => q.FearLevel <= filter.MaxFearLevel.Value);
+        if (filter.FearLevel.HasValue)
+            query = query.Where(q => q.FearLevel == filter.FearLevel.Value);
 
         if (filter.HasActors.HasValue)
             query = query.Where(q => q.HasActors == filter.HasActors.Value);
@@ -60,22 +58,24 @@ public class QuestService(AppDbContext context) : IQuestService
         };
         
         var quests = await query.ToListAsync();
-
         return quests.Select(ToBriefDTO).ToList();
     }
 
-    public async Task<QuestDetailsDTO?> GetByIdAsync(Guid id)
+    public async Task<QuestDetailsDTO> GetByIdAsync(Guid id)
     {
         var quest = await context.Quests
             .Include(q => q.Photos)
-            .Include(q => q.Reviews)
+            .Include(q => q.Reviews).ThenInclude(r =>r.User)
             .FirstOrDefaultAsync(q => q.Id == id);
-
-        return quest == null ? null : ToDetailsDTO(quest);
+        if (quest == null) 
+            throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
+        return ToDetailsDTO(quest);
     }
 
     public async Task<QuestDetailsDTO> CreateAsync(QuestUpdateCreateDTO dto)
     {
+        if (dto.PhotoUrls.Count > 6)
+            throw new HttpException(HttpStatusCode.BadRequest, "Можно загрузить максимум 6 фото");
         var quest = FromCreateDTO(dto);
 
         context.Quests.Add(quest);
@@ -85,21 +85,28 @@ public class QuestService(AppDbContext context) : IQuestService
         return questDto;
     }
 
-    public async Task<QuestDetailsDTO?> UpdateAsync(Guid id, QuestUpdateCreateDTO dto)
+    public async Task<QuestDetailsDTO> UpdateAsync(Guid id, QuestUpdateCreateDTO dto)
     {
+        if (dto.PhotoUrls.Count > 6)
+            throw new HttpException(HttpStatusCode.BadRequest, "Можно загрузить максимум 6 фото");
         var quest = await context.Quests
             .Include(q => q.Photos)
+            .Include(q => q.Reviews).ThenInclude(r => r.User)
             .FirstOrDefaultAsync(q => q.Id == id);
 
-        if (quest == null) return null;
+        if (quest == null) 
+            throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
         FromUpdateDTO(quest, dto);
+        await context.SaveChangesAsync();
+        
         return ToDetailsDTO(quest);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
         var quest = await context.Quests.FindAsync(id);
-        if (quest == null) return false;
+        if (quest == null) 
+            throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
 
         context.Quests.Remove(quest);
         await context.SaveChangesAsync();
@@ -121,6 +128,7 @@ public class QuestService(AppDbContext context) : IQuestService
             HasActors = quest.HasActors,
             FearLevel = quest.FearLevel,
             PhotoUrls = quest.Photos.Select(p => p.Url).ToList(),
+            Reviews = quest.Reviews.Select(ReviewDTO.ToDTO).ToList(),
             Rating = quest.Rating
         };
     }

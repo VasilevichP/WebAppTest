@@ -9,8 +9,7 @@ public class FilterQuestDTO
     public decimal? MaxPrice { get; set; }
     public int? MinDuration { get; set; }
     public int? MaxDuration { get; set; }
-    public int? MinFearLevel { get; set; }
-    public int? MaxFearLevel { get; set; }
+    public int? FearLevel { get; set; }
     public bool? HasActors { get; set; }
     public int? DifficultyLevel { get; set; }
 

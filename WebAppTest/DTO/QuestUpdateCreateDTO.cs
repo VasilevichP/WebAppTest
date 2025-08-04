@@ -14,5 +14,5 @@ public class QuestUpdateCreateDTO
     public bool HasActors { get; set; } 
     public int FearLevel { get; set; }
 
-    public List<string> PhotoUrls { get; set; } = new();
+    public List<string> PhotoUrls { get; set; } = new(6);
 }

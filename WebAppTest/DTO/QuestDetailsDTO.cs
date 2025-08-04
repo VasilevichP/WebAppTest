@@ -16,5 +16,6 @@ public class QuestDetailsDTO
     public int FearLevel { get; set; }
 
     public List<string> PhotoUrls { get; set; } = new();
+    public List<ReviewDTO> Reviews { get; set; } = new();
     public double Rating { get; set; }
 }
