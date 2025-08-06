@@ -13,7 +13,7 @@ public class UserService(AppDbContext context) : IUserService
     public async Task<List<UserBriefDTO>> GetAllUsers()
     {
         var users = await context.Users.Where(u => u.Role=="User").ToListAsync();
-        return users.Select(ToBriefDTO).ToList();
+        return users.Select(UserBriefDTO.ToDTO).ToList();
     }
 
     public async Task<List<UserBriefDTO>> GetAllUsersFiltered(FilterUsersDTO filter)
@@ -31,7 +31,7 @@ public class UserService(AppDbContext context) : IUserService
         }
         var users = await query
             .ToListAsync();
-        return users.Select(ToBriefDTO).ToList();
+        return users.Select(UserBriefDTO.ToDTO).ToList();
     }
 
     public async Task<UserProfileDTO?> GetProfileAsync(Guid userId)
@@ -39,7 +39,7 @@ public class UserService(AppDbContext context) : IUserService
         var user = await GetUserAsync(userId);
         if (user == null) 
             throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
-        return ToProfileDTO(user);
+        return UserProfileDTO.ToDTO(user);
     }
 
     public async Task<UserAdminDTO> GetProfileForAdminAsync(Guid userId)
@@ -47,7 +47,7 @@ public class UserService(AppDbContext context) : IUserService
         var user = await GetUserAsync(userId);
         if (user == null) 
             throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
-        return ToProfileForAdminDTO(user);
+        return UserAdminDTO.ToDTO(user);
     }
 
     private async Task<User?> GetUserAsync(Guid id)
@@ -59,7 +59,7 @@ public class UserService(AppDbContext context) : IUserService
         return user;
     }
 
-    public async Task<UserProfileDTO?> UpdateProfileAsync(Guid userId, UserProfileUpdateDTO dto)
+    public async Task<UserProfileDTO> UpdateProfileAsync(Guid userId, UserProfileUpdateDTO dto)
     {
         var user = await context.Users
             .Include(u => u.Bookings).ThenInclude(b => b.Quest)
@@ -68,10 +68,11 @@ public class UserService(AppDbContext context) : IUserService
         if (user == null) 
             throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
 
-        FromUpdateDTO(user, dto);
-        await context.SaveChangesAsync();
+        UserProfileUpdateDTO.FromDTO(user, dto);
+        if(await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.BadRequest, "Возникла ошибка при обновлении профиля");
 
-        return ToProfileDTO(user);
+        return UserProfileDTO.ToDTO(user);
     }
 
     public async Task<bool> DeleteProfileAsync(Guid userId)
@@ -83,69 +84,5 @@ public class UserService(AppDbContext context) : IUserService
         context.Users.Remove(user);
         await context.SaveChangesAsync();
         return true;
-    }
-    
-    private UserProfileDTO ToProfileDTO(User user)
-    {
-        return new UserProfileDTO
-        {
-            Email = user.Email,
-            Username = user.Username,
-            Phone = user.Phone,
-            Bookings = user.Bookings.Select(BookingDTO.ToDTO).ToList(),
-            Reviews = user.Reviews.Select(ReviewDTO.ToDTO).ToList()
-        };
-    }
-    
-    private UserAdminDTO ToProfileForAdminDTO(User user)
-    {
-        return new UserAdminDTO
-        {
-            UserId = user.Id,
-            Email = user.Email,
-            Username = user.Username,
-            Phone = user.Phone,
-            Bookings = user.Bookings.Select(ToUserBookingDTO).ToList(),
-            Reviews = new List<Review>(user.Reviews)
-        };
-    }
-    
-    private UserBriefDTO ToBriefDTO(User user)
-    {
-        return new UserBriefDTO()
-        {
-            UserId = user.Id,
-            Email = user.Email,
-            Username = user.Username,
-            Phone = user.Phone
-        };
-    }
-    
-    private BookingDTO ToUserBookingDTO(Booking booking)
-    {
-        return new BookingDTO()
-        {
-            Id = booking.Id,
-            QuestTitle = booking.Quest.Title,
-            UserEmail = booking.User.Email,
-            Date = booking.Date,
-            Time = booking.Time,
-            ParticipantsCount = booking.ParticipantsCount,
-            Status = booking.Status
-        };
-    }
-    
-    private void FromUpdateDTO(User user, UserProfileUpdateDTO dto)
-    {
-        if (!string.IsNullOrWhiteSpace(dto.NewUsername))
-            user.Username = dto.NewUsername;
-
-
-        if (!string.IsNullOrWhiteSpace(dto.NewPhoneNumber))
-            user.Phone = dto.NewPhoneNumber;
-        
-        if (!string.IsNullOrWhiteSpace(dto.NewPassword))
-            user.PasswordHash = new PasswordHasher<User>()
-                .HashPassword(user, dto.NewPassword);
     }
 }

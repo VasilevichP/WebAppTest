@@ -15,7 +15,7 @@ namespace WebAppTest.Services;
 
 public class AuthService(AppDbContext context, IConfiguration configuration) : IAuthService
 {
-    public async Task<User> RegisterAsync(UserAuthDTO request)
+    public async Task<UserBriefDTO> RegisterAsync(UserAuthDTO request)
     {
         if (await context.Users.AnyAsync((u => u.Email == request.Email)))
         {
@@ -37,7 +37,7 @@ public class AuthService(AppDbContext context, IConfiguration configuration) : I
          {
             throw new HttpException(HttpStatusCode.BadRequest,"Возникла ошибка при регистрации");   
          }
-        return user;
+        return UserBriefDTO.ToDTO(user);
     }
 
     public async Task<TokenResponseDTO> LoginAsync(UserAuthDTO request)

@@ -69,7 +69,7 @@ public class BookingService(AppDbContext context) : IBookingService
         if (overlappingBookingExists)
             throw new HttpException(HttpStatusCode.BadRequest, "На это время уже есть бронирование для данного квеста.");
 
-        var booking = FromCreateDTO(dto);
+        var booking = BookingCreateDto.FromDTO(dto);
         context.Bookings.Add(booking);
         await context.SaveChangesAsync();
 
@@ -99,43 +99,9 @@ public class BookingService(AppDbContext context) : IBookingService
             .Include(b => b.User)
             .FirstOrDefaultAsync(b => b.Id == id);
         if (booking == null) return null;
-        FromUpdateDTO(booking, dto);
+        BookingUpdateDTO.FromUpdateDTO(booking, dto);
         await context.SaveChangesAsync();
         
         return BookingDTO.ToDTO(booking);
-    }
-
-    // private BookingDTO ToDTO(Booking booking)
-    // {
-    //     return new BookingDTO
-    //     {
-    //         Id = booking.Id,
-    //         UserEmail = booking.User.Email,
-    //         QuestTitle = booking.Quest.Title,
-    //         ParticipantsCount = booking.ParticipantsCount,
-    //         Date = booking.Date,
-    //         Time = booking.Time,
-    //         Status = booking.Status
-    //     };
-    // }
-
-    private Booking FromCreateDTO(BookingCreateDto dto)
-    {
-        return new Booking()
-        {
-            UserId = dto.UserId.Value,
-            QuestId = dto.QuestId,
-            ParticipantsCount = dto.ParticipantsCount,
-            Date = dto.Date,
-            Time = dto.Time
-        };
-    }
-
-    private void FromUpdateDTO(Booking booking, BookingUpdateDTO dto)
-    {
-        if (dto.Date.HasValue) booking.Date = dto.Date.Value;
-        if (dto.Time.HasValue) booking.Time = dto.Time.Value;
-        if (dto.Participants.HasValue) booking.ParticipantsCount = dto.Participants.Value;
-        if (dto.Status.HasValue) booking.Status = dto.Status.Value;
     }
 }

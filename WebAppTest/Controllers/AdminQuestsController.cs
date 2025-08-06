@@ -8,31 +8,10 @@ namespace WebAppTest.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "Admin")]
 [EnableCors("CORSSpecifications")]
 public class AdminQuestsController(IQuestService questService) : ControllerBase
 {
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var quests = await questService.GetAsync();
-        return Ok(quests);
-    }
-    
-    [HttpPost("filter")]
-    public async Task<IActionResult> GetAllFiltered([FromBody] FilterQuestDTO filter)
-    {
-        var quests = await questService.GetFilteredAsync(filter);
-        return Ok(quests);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> Get(Guid id)
-    {
-        var quest = await questService.GetByIdAsync(id);
-        return Ok(quest);
-    }
-
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] QuestUpdateCreateDTO dto)
     {

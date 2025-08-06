@@ -28,7 +28,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasCheckConstraint("CK_User_Email_Format", "Email LIKE '%_@__%.__%'");
         
         modelBuilder.Entity<User>()
-            .HasCheckConstraint("CK_User_Phone_Format", "Phone LIKE '+%' AND LENGTH(Phone) >= 10");
+            .HasCheckConstraint("CK_User_Phone_Format", "Phone NOT LIKE '%[^0-9]%' AND LENGTH(Phone) = 12");
         
         modelBuilder.Entity<Quest>()
             .HasCheckConstraint("CK_Quest_MinParticipants", "MaxParticipants >= 1");

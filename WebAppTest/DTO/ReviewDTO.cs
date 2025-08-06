@@ -6,6 +6,7 @@ public class ReviewDTO
 {
     public Guid Id { get; set; }
     public string UserName { get; set; } = String.Empty;
+    public string QuestTitle { get; set; } = String.Empty;
     public int Rating { get; set; }
     public string Text { get; set; } = String.Empty;
     public DateTime Date { get; set; }
@@ -18,6 +19,7 @@ public class ReviewDTO
             Text = review.Text,
             Date = review.Date,
             UserName = review.User.Username ?? review.User.Email,
+            QuestTitle = review.Quest.Title,
             Rating = review.Rating
         };
     }

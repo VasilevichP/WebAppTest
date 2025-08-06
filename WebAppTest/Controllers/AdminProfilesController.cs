@@ -11,26 +11,27 @@ namespace WebAppTest.Controllers;
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
 [EnableCors("CORSSpecifications")]
-public class AdminProfileController(IUserService userService) : ControllerBase
+public class AdminProfilesController(IUserService userService) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         var users = await userService.GetAllUsers();
-        return users.Any() ? Ok(users) : Ok("Список пользователей пуст");
+        return Ok(users);
     }
     
     [HttpPost("filter")]
     public async Task<IActionResult> GetAllFiltered([FromBody] FilterUsersDTO filter)
     {
         var users = await userService.GetAllUsersFiltered(filter);
-        return users.Any() ? Ok(users) : Ok("Не найдено подходящих пользователей");
+        return Ok(users);
     }
 
-    [HttpGet("profile")]
-    public async Task<IActionResult> GetProfile(Guid userId)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetProfile(Guid id)
     {
-        var profile = await userService.GetProfileForAdminAsync(userId);
+        Console.WriteLine((id));
+        var profile = await userService.GetProfileForAdminAsync(id);
         return Ok(profile);
     }
 }

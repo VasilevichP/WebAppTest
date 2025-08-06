@@ -204,7 +204,7 @@ namespace WebAppTest.Migrations
                         {
                             t.HasCheckConstraint("CK_User_Email_Format", "Email LIKE '%_@__%.__%'");
 
-                            t.HasCheckConstraint("CK_User_Phone_Format", "Phone LIKE '+%' AND LENGTH(Phone) >= 10");
+                            t.HasCheckConstraint("CK_User_Phone_Format", "Phone NOT LIKE '%[^0-9]%' AND LENGTH(Phone) = 12");
                         });
                 });
 

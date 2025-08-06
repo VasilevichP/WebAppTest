@@ -1,3 +1,5 @@
+using WebAppTest.Entities;
+
 namespace WebAppTest.DTO;
 
 public class QuestBriefDTO
@@ -10,4 +12,20 @@ public class QuestBriefDTO
     public int DifficultyLevel { get; set; }
     public bool HasActors { get; set; }
     public int FearLevel { get; set; }
+    
+    public static QuestBriefDTO ToDTO(Quest quest)
+    {
+        return new QuestBriefDTO
+        {
+            Id = quest.Id,
+            Title = quest.Title,
+            DurationMinutes = quest.DurationMinutes,
+            MaxParticipants = quest.MaxParticipants,
+            Price = quest.Price,
+            DifficultyLevel = quest.DifficultyLevel,
+            HasActors = quest.HasActors,
+            FearLevel = quest.FearLevel
+        };
+    }
+
 }

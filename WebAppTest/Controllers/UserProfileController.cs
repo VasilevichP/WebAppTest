@@ -13,19 +13,19 @@ namespace WebAppTest.Controllers;
 [EnableCors("CORSSpecifications")]
 public class UserProfileController (IUserService userService) : ControllerBase
 {
-    [HttpGet("profile")]
+    [HttpGet]
     public async Task<IActionResult> GetProfile()
     {
         Guid userId = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var profile = await userService.GetProfileAsync(userId);
-        return (profile == null)? NotFound("Профиль пользователя не найден") : Ok(profile);
+        return Ok(profile);
     }
     
-    [HttpPut("profile")]
+    [HttpPut]
     public async Task<IActionResult> UpdateProfile([FromBody] UserProfileUpdateDTO dto)
     {
         Guid userId = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var updated = await userService.UpdateProfileAsync(userId, dto);
-        return (updated == null)? NotFound("Профиль пользователя не найден") : Ok(updated);
+        return Ok(updated);
     }
 }

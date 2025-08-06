@@ -9,7 +9,7 @@ public class ReviewService(AppDbContext context) : IReviewService
 {
     public async Task<ReviewDTO> CreateReviewAsync(ReviewCreateDTO dto)
     {
-        var review = FromCreateDTO(dto);
+        var review = ReviewCreateDTO.FromCreateDTO(dto);
         await context.Reviews.AddAsync(review);
         await context.SaveChangesAsync();
 
@@ -32,30 +32,6 @@ public class ReviewService(AppDbContext context) : IReviewService
         await CountRating(quest);
         await context.SaveChangesAsync();
         return true;
-    }
-
-    // private ReviewDTO ToDTO(Review review)
-    // {
-    //     return new ReviewDTO()
-    //     {
-    //         Id = review.Id,
-    //         Text = review.Text,
-    //         Date = review.Date,
-    //         UserName = review.User.Username ?? review.User.Email,
-    //         Rating = review.Rating
-    //     };
-    // }
-    //
-    private Review FromCreateDTO(ReviewCreateDTO dto)
-    {
-        return new Review()
-        {
-            UserId = dto.UserId.Value,
-            QuestId = dto.QuestId,
-            Text = dto.Text,
-            Date = DateTime.Now,
-            Rating = dto.Rating
-        };
     }
 
     private async Task CountRating(Quest quest)

@@ -13,7 +13,7 @@ public class QuestService(AppDbContext context) : IQuestService
     public async Task<List<QuestBriefDTO>> GetAsync()
     {
         var quests = await context.Quests.ToListAsync();
-        return quests.Select(ToBriefDTO).ToList();
+        return quests.Select(QuestBriefDTO.ToDTO).ToList();
     }
 
     public async Task<List<QuestBriefDTO>> GetFilteredAsync(FilterQuestDTO filter)
@@ -58,7 +58,7 @@ public class QuestService(AppDbContext context) : IQuestService
         };
         
         var quests = await query.ToListAsync();
-        return quests.Select(ToBriefDTO).ToList();
+        return quests.Select(QuestBriefDTO.ToDTO).ToList();
     }
 
     public async Task<QuestDetailsDTO> GetByIdAsync(Guid id)
@@ -69,18 +69,18 @@ public class QuestService(AppDbContext context) : IQuestService
             .FirstOrDefaultAsync(q => q.Id == id);
         if (quest == null) 
             throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
-        return ToDetailsDTO(quest);
+        return QuestDetailsDTO.ToDTO(quest);
     }
 
     public async Task<QuestDetailsDTO> CreateAsync(QuestUpdateCreateDTO dto)
     {
         if (dto.PhotoUrls.Count > 6)
             throw new HttpException(HttpStatusCode.BadRequest, "Можно загрузить максимум 6 фото");
-        var quest = FromCreateDTO(dto);
+        var quest = QuestUpdateCreateDTO.FromCreateDTO(dto);
 
         context.Quests.Add(quest);
         await context.SaveChangesAsync();
-        var questDto = ToDetailsDTO(quest);
+        var questDto = QuestDetailsDTO.ToDTO(quest);
 
         return questDto;
     }
@@ -96,10 +96,10 @@ public class QuestService(AppDbContext context) : IQuestService
 
         if (quest == null) 
             throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
-        FromUpdateDTO(quest, dto);
+        QuestUpdateCreateDTO.FromUpdateDTO(quest, dto);
         await context.SaveChangesAsync();
         
-        return ToDetailsDTO(quest);
+        return QuestDetailsDTO.ToDTO(quest);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
@@ -111,78 +111,5 @@ public class QuestService(AppDbContext context) : IQuestService
         context.Quests.Remove(quest);
         await context.SaveChangesAsync();
         return true;
-    }
-
-    private QuestDetailsDTO ToDetailsDTO(Quest quest)
-    {
-        return new QuestDetailsDTO
-        {
-            Id = quest.Id,
-            Title = quest.Title,
-            Description = quest.Description,
-            Address = quest.Address,
-            DurationMinutes = quest.DurationMinutes,
-            MaxParticipants = quest.MaxParticipants,
-            Price = quest.Price,
-            DifficultyLevel = quest.DifficultyLevel,
-            HasActors = quest.HasActors,
-            FearLevel = quest.FearLevel,
-            PhotoUrls = quest.Photos.Select(p => p.Url).ToList(),
-            Reviews = quest.Reviews.Select(ReviewDTO.ToDTO).ToList(),
-            Rating = quest.Rating
-        };
-    }
-
-    private QuestBriefDTO ToBriefDTO(Quest quest)
-    {
-        return new QuestBriefDTO
-        {
-            Id = quest.Id,
-            Title = quest.Title,
-            DurationMinutes = quest.DurationMinutes,
-            MaxParticipants = quest.MaxParticipants,
-            Price = quest.Price,
-            DifficultyLevel = quest.DifficultyLevel,
-            HasActors = quest.HasActors,
-            FearLevel = quest.FearLevel
-        };
-    }
-
-    private Quest FromCreateDTO(QuestUpdateCreateDTO dto)
-    {
-        return new Quest
-        {
-            Title = dto.Title,
-            Description = dto.Description,
-            Address = dto.Address,
-            DurationMinutes = dto.DurationMinutes,
-            MaxParticipants = dto.MaxParticipants,
-            Price = dto.Price,
-            DifficultyLevel = dto.DifficultyLevel,
-            HasActors = dto.HasActors,
-            FearLevel = dto.FearLevel,
-            Photos = dto.PhotoUrls.Select(url => new QuestPhoto { Url = url }).ToList()
-        };
-    }
-
-    private void FromUpdateDTO(Quest quest, QuestUpdateCreateDTO dto)
-    {
-        quest.Title = dto.Title;
-        quest.Description = dto.Description;
-        quest.Address = dto.Address;
-        quest.DurationMinutes = dto.DurationMinutes;
-        quest.MaxParticipants = dto.MaxParticipants;
-        quest.Price = dto.Price;
-        quest.DifficultyLevel = dto.DifficultyLevel;
-        quest.HasActors = dto.HasActors;
-        quest.FearLevel = dto.FearLevel;
-
-        quest.Photos = dto.PhotoUrls
-            .Select(url => new QuestPhoto
-            {
-                Url = url,
-                Quest = quest
-            })
-            .ToList();
     }
 }
