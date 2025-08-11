@@ -13,30 +13,38 @@ namespace WebAppTest.Controllers;
 public class AdminBookingsController(IBookingService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> GetBookings()
     {
         var bookings = await service.GetBookingsAsync();
-        return (bookings.Any())? Ok(bookings):Ok("Список бронирований пуст");
+        return Ok(bookings);
     }
     
-    [HttpPost("filter")]
-    public async Task<IActionResult> GetFiltered([FromBody] FilterBookingDTO filter)
+    [HttpPost]
+    public async Task<IActionResult> GetFilteredBookings([FromBody] FilterBookingDTO filter)
     {
         var bookings = await service.GetBookingsFilteredAsync(filter);
-        return (bookings.Any())? Ok(bookings):Ok("Не найдено подходящих записей");
+        return Ok(bookings);
     }
     
-    [HttpPatch("cancel")]
-    public async Task<IActionResult> Cancel(Guid id)
+    [HttpPatch]
+    public async Task<IActionResult> CancelBooking(Guid id)
     {
         var booking = await service.CancelAsync(id);
-        return (booking == null) ? NotFound("Запись не найдена") : Ok(booking);
+        return Ok(booking);
     }
     
-    [HttpPut("update")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] BookingUpdateDTO dto)
+    [HttpPut]
+    public async Task<IActionResult> UpdateBooking(Guid id, [FromBody] BookingUpdateDTO dto)
     {
-        var booking = await service.AdminUpdateAsync(id, dto);
-        return (booking == null) ? NotFound("Запись не найдена") : Ok(booking);
+        var booking = await service.UpdateAsync(id, dto);
+        return Ok(booking);
     }
+    
+    [HttpDelete]
+    public async Task<IActionResult> DeleteBooking(Guid id)
+    {
+        await service.DeleteAsync(id);
+        return Ok();
+    }
+
 }

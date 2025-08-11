@@ -13,21 +13,21 @@ namespace WebAppTest.Controllers;
 public class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("register")]
-    public async Task<ActionResult<User>> Register(UserAuthDTO request)
+    public async Task<ActionResult> Register(UserAuthDTO request)
     {
         var user = await authService.RegisterAsync(request);
         return Ok(user);
     }
     
     [HttpPost("login")]
-    public async Task<ActionResult<TokenResponseDTO>> Login(UserAuthDTO request)
+    public async Task<ActionResult> Login(UserAuthDTO request)
     {
-        var result = await authService.LoginAsync(request);
-        return Ok(result);
+        var token = await authService.LoginAsync(request);
+        return Ok(token);
     }
 
     [HttpPost("refresh_token")]
-    public async Task<ActionResult<TokenResponseDTO>> RefreshToken(RefreshTokenRequestDTO request)
+    public async Task<ActionResult> RefreshToken(RefreshTokenRequestDTO request)
     {
         var result = await authService.RefreshTokensAsync(request);
         return Ok(result);

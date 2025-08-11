@@ -1,4 +1,5 @@
 using System.Net;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTO;
@@ -10,6 +11,15 @@ namespace WebAppTest.Services;
 
 public class BookingService(AppDbContext context) : IBookingService
 {
+    private async Task<Booking?> FindBookingAsync(Guid id)
+    {
+        var booking = await context.Bookings
+            .Include(b => b.Quest)
+            .Include(b => b.User)
+            .FirstOrDefaultAsync(b => b.Id == id);
+        return booking;
+    }
+
     public async Task<List<BookingDTO>> GetBookingsAsync()
     {
         var bookings = await context.Bookings
@@ -17,7 +27,7 @@ public class BookingService(AppDbContext context) : IBookingService
             .Include(b => b.User)
             .ToListAsync();
 
-        return bookings.Select(BookingDTO.ToDTO).ToList();
+        return bookings.Adapt<List<BookingDTO>>();
     }
 
     public async Task<List<BookingDTO>> GetBookingsFilteredAsync(FilterBookingDTO filter)
@@ -41,21 +51,25 @@ public class BookingService(AppDbContext context) : IBookingService
         query = query.OrderBy(b => b.Date);
 
         var bookings = await query.ToListAsync();
-        return bookings.Select(BookingDTO.ToDTO).ToList();
+        return bookings.Adapt<List<BookingDTO>>();
     }
 
-    public async Task<BookingDTO?> GetBookingAsync(Guid id)
+    public async Task<BookingDTO> GetBookingAsync(Guid id)
     {
-        var booking = await context.Bookings.Where(u => u.Id == id).FirstOrDefaultAsync();
-
-        return (booking == null) ? null : BookingDTO.ToDTO(booking);
+        var booking = await FindBookingAsync(id) ??
+                      throw new HttpException(HttpStatusCode.NotFound, "Бронирование не найдено");
+        return booking.Adapt<BookingDTO>();
     }
 
     public async Task<BookingDTO> CreateBookingAsync(BookingCreateDto dto)
     {
-        var quest = await context.Quests.FindAsync(dto.QuestId);
-        if (quest == null)
-            throw new HttpException(HttpStatusCode.NotFound,"Квест не найден");
+        var quest = await context.Quests.FindAsync(dto.QuestId) ??
+                    throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
+        var user = (await context.Users.FindAsync(dto.UserId)) ??
+                   throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
+        if (quest.MaxParticipants < dto.Participants)
+            throw new HttpException(HttpStatusCode.BadRequest,
+                $"Количество участников не должно превышать {quest.MaxParticipants} человек");
 
         var startTime = dto.Time;
         var endTime = startTime.AddMinutes(quest.DurationMinutes + 20);
@@ -63,45 +77,53 @@ public class BookingService(AppDbContext context) : IBookingService
         var overlappingBookingExists = await context.Bookings
             .Where(b => b.QuestId == dto.QuestId && b.Date == dto.Date)
             .AnyAsync(b =>
-                b.Time <= endTime && b.Time.AddMinutes(quest.DurationMinutes + 20) >= startTime && b.Status == BookingStatus.ACTIVE
+                b.Time <= endTime && b.Time.AddMinutes(quest.DurationMinutes + 20) >= startTime &&
+                b.Status == BookingStatus.ACTIVE
             );
 
         if (overlappingBookingExists)
-            throw new HttpException(HttpStatusCode.BadRequest, "На это время уже есть бронирование для данного квеста.");
+            throw new HttpException(HttpStatusCode.BadRequest,
+                "На это время уже есть бронирование для данного квеста.");
 
-        var booking = BookingCreateDto.FromDTO(dto);
+        var booking = dto.Adapt<Booking>();
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        if (await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.InternalServerError, "Возникла ошибка при бронировании");
 
-        booking.Quest = (await context.Quests.FindAsync(booking.QuestId))!;
-        booking.User = (await context.Users.FindAsync(booking.UserId))!;
+        booking.Quest = quest;
+        booking.User = user;
 
-        return BookingDTO.ToDTO(booking);
+        return booking.Adapt<BookingDTO>();
     }
 
-    public async Task<BookingDTO?> CancelAsync(Guid id)
+    public async Task<BookingDTO> CancelAsync(Guid id)
     {
-        var booking = await context.Bookings
-            .Include(b => b.Quest)
-            .Include(b => b.User)
-            .FirstOrDefaultAsync(b => b.Id == id);
-        if (booking == null) return null;
+        var booking = await FindBookingAsync(id) ??
+                      throw new HttpException(HttpStatusCode.NotFound, "Бронирование не найдено");
         booking.Status = BookingStatus.CANCELLED;
-        await context.SaveChangesAsync();
-        
-        return BookingDTO.ToDTO(booking);
+        if (await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.InternalServerError, "Возникла ошибка при отмене бронирования");
+
+        return booking.Adapt<BookingDTO>();
     }
 
-    public async Task<BookingDTO?> AdminUpdateAsync(Guid id, BookingUpdateDTO dto)
+    public async Task<BookingDTO> UpdateAsync(Guid id, BookingUpdateDTO dto)
     {
-        var booking = await context.Bookings
-            .Include(b => b.Quest)
-            .Include(b => b.User)
-            .FirstOrDefaultAsync(b => b.Id == id);
-        if (booking == null) return null;
-        BookingUpdateDTO.FromUpdateDTO(booking, dto);
-        await context.SaveChangesAsync();
-        
-        return BookingDTO.ToDTO(booking);
+        var booking = await FindBookingAsync(id) ??
+            throw new HttpException(HttpStatusCode.NotFound, "Бронирование не найдено");
+        dto.Adapt<Booking>();
+        if (await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.InternalServerError, "Возникла ошибка изменении записи");
+
+        return booking.Adapt<BookingDTO>();
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        var booking = await FindBookingAsync(id) ??
+                      throw new HttpException(HttpStatusCode.NotFound, "Бронирование не найдено");
+        context.Bookings.Remove(booking);
+        if (await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.InternalServerError, "Возникла ошибка при удалении");
     }
 }

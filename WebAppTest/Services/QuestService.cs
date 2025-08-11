@@ -1,4 +1,5 @@
 using System.Net;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTO;
@@ -10,13 +11,13 @@ namespace WebAppTest.Services;
 
 public class QuestService(AppDbContext context) : IQuestService
 {
-    public async Task<List<QuestBriefDTO>> GetAsync()
+    public async Task<List<QuestBaseDTO>> GetAsync()
     {
         var quests = await context.Quests.ToListAsync();
-        return quests.Select(QuestBriefDTO.ToDTO).ToList();
+        return quests.Adapt<List<QuestBaseDTO>>();
     }
 
-    public async Task<List<QuestBriefDTO>> GetFilteredAsync(FilterQuestDTO filter)
+    public async Task<List<QuestBaseDTO>> GetFilteredAsync(FilterQuestDTO filter)
     {
         var query = context.Quests.AsQueryable();
 
@@ -58,58 +59,69 @@ public class QuestService(AppDbContext context) : IQuestService
         };
         
         var quests = await query.ToListAsync();
-        return quests.Select(QuestBriefDTO.ToDTO).ToList();
+        return quests.Adapt<List<QuestBaseDTO>>();
     }
 
     public async Task<QuestDetailsDTO> GetByIdAsync(Guid id)
     {
-        var quest = await context.Quests
-            .Include(q => q.Photos)
-            .Include(q => q.Reviews).ThenInclude(r =>r.User)
-            .FirstOrDefaultAsync(q => q.Id == id);
-        if (quest == null) 
+        var quest = await FindQuestAsync(id) ?? 
             throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
-        return QuestDetailsDTO.ToDTO(quest);
+        return quest.Adapt<QuestDetailsDTO>();
     }
 
     public async Task<QuestDetailsDTO> CreateAsync(QuestUpdateCreateDTO dto)
     {
         if (dto.PhotoUrls.Count > 6)
             throw new HttpException(HttpStatusCode.BadRequest, "Можно загрузить максимум 6 фото");
-        var quest = QuestUpdateCreateDTO.FromCreateDTO(dto);
+        var quest = dto.Adapt<Quest>();
 
         context.Quests.Add(quest);
-        await context.SaveChangesAsync();
-        var questDto = QuestDetailsDTO.ToDTO(quest);
-
-        return questDto;
+        if (await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.InternalServerError, "Возникла ошибка при создании квеста");
+        
+        return quest.Adapt<QuestDetailsDTO>();
     }
 
     public async Task<QuestDetailsDTO> UpdateAsync(Guid id, QuestUpdateCreateDTO dto)
     {
         if (dto.PhotoUrls.Count > 6)
             throw new HttpException(HttpStatusCode.BadRequest, "Можно загрузить максимум 6 фото");
+        var quest = await FindQuestAsync(id) ??
+            throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
+        
+        var existingUrls = quest.Photos.Select(p => p.Url).ToHashSet();
+        var newPhotos = dto.PhotoUrls
+            .Where(url => !existingUrls.Contains(url))
+            .Select(url => new QuestPhoto { Url = url, QuestId = id })
+            .ToList();
+        quest.Photos.Clear();
+        foreach (var photo in newPhotos)
+        {
+            quest.Photos.Add(photo);
+        }
+        
+        dto.Adapt(quest);
+        if (await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.InternalServerError, "Возникла ошибка обновлении информации о квесте");
+        return quest.Adapt<QuestDetailsDTO>();
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        var quest = await context.Quests.FindAsync(id)??
+            throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
+
+        context.Quests.Remove(quest);
+        if (await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.InternalServerError, "Возникла ошибка при удалении квеста");
+    }
+
+    private async Task<Quest?> FindQuestAsync(Guid id)
+    {
         var quest = await context.Quests
             .Include(q => q.Photos)
             .Include(q => q.Reviews).ThenInclude(r => r.User)
             .FirstOrDefaultAsync(q => q.Id == id);
-
-        if (quest == null) 
-            throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
-        QuestUpdateCreateDTO.FromUpdateDTO(quest, dto);
-        await context.SaveChangesAsync();
-        
-        return QuestDetailsDTO.ToDTO(quest);
-    }
-
-    public async Task<bool> DeleteAsync(Guid id)
-    {
-        var quest = await context.Quests.FindAsync(id);
-        if (quest == null) 
-            throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
-
-        context.Quests.Remove(quest);
-        await context.SaveChangesAsync();
-        return true;
+        return quest;
     }
 }

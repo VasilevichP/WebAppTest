@@ -1,10 +1,12 @@
 using System.Text;
+using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using WebAppTest.Data;
 using WebAppTest.Exceptions;
+using WebAppTest.Mappings;
 using WebAppTest.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +50,9 @@ builder.Services.AddCors(options =>
                 .AllowCredentials();
         });
 });
+
+builder.Services.AddMapster();
+MapsterConfig.RegisterMappings();
 
 builder.Logging.AddConsole();
 

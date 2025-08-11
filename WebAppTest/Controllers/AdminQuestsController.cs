@@ -13,23 +13,23 @@ namespace WebAppTest.Controllers;
 public class AdminQuestsController(IQuestService questService) : ControllerBase
 {
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] QuestUpdateCreateDTO dto)
+    public async Task<IActionResult> CreateQuest([FromBody] QuestUpdateCreateDTO dto)
     {
         var quest = await questService.CreateAsync(dto);
         return Ok(quest);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] QuestUpdateCreateDTO dto)
+    public async Task<IActionResult> UpdateQuest(Guid id, [FromBody] QuestUpdateCreateDTO dto)
     {
         var updated = await questService.UpdateAsync(id, dto);
         return Ok(updated);
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> DeleteQuest(Guid id)
     {
-        var deleted = await questService.DeleteAsync(id);
-        return Ok("Квест был удален");
+        await questService.DeleteAsync(id);
+        return Ok();
     }
 }

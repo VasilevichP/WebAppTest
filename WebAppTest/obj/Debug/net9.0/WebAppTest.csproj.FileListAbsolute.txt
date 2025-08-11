@@ -491,3 +491,6 @@ D:\Work\c_sharp\QuestsAppTest\Backend\WebAppTest\obj\Debug\net9.0\refint\WebAppT
 D:\Work\c_sharp\QuestsAppTest\Backend\WebAppTest\obj\Debug\net9.0\WebAppTest.pdb
 D:\Work\c_sharp\QuestsAppTest\Backend\WebAppTest\obj\Debug\net9.0\WebAppTest.genruntimeconfig.cache
 D:\Work\c_sharp\QuestsAppTest\Backend\WebAppTest\obj\Debug\net9.0\ref\WebAppTest.dll
+D:\Work\c_sharp\QuestsAppTest\Backend\WebAppTest\bin\Debug\net9.0\Mapster.dll
+D:\Work\c_sharp\QuestsAppTest\Backend\WebAppTest\bin\Debug\net9.0\Mapster.Core.dll
+D:\Work\c_sharp\QuestsAppTest\Backend\WebAppTest\bin\Debug\net9.0\Mapster.DependencyInjection.dll

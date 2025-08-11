@@ -14,14 +14,14 @@ namespace WebAppTest.Controllers;
 public class AdminProfilesController(IUserService userService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAllProfiles()
     {
         var users = await userService.GetAllUsers();
         return Ok(users);
     }
     
     [HttpPost("filter")]
-    public async Task<IActionResult> GetAllFiltered([FromBody] FilterUsersDTO filter)
+    public async Task<IActionResult> GetAllFilteredProfiles([FromBody] FilterUsersDTO filter)
     {
         var users = await userService.GetAllUsersFiltered(filter);
         return Ok(users);
@@ -30,8 +30,7 @@ public class AdminProfilesController(IUserService userService) : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetProfile(Guid id)
     {
-        Console.WriteLine((id));
-        var profile = await userService.GetProfileForAdminAsync(id);
+        var profile = await userService.GetProfileAsync(id);
         return Ok(profile);
     }
 }

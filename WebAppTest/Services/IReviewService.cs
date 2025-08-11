@@ -5,5 +5,5 @@ namespace WebAppTest.Services;
 public interface IReviewService
 {
     public Task<ReviewDTO> CreateReviewAsync(ReviewCreateDTO dto);
-    public Task<bool> DeleteReviewAsync(Guid id);
+    public Task DeleteReviewAsync(Guid id);
 }

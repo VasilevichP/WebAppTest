@@ -1,28 +1,18 @@
-using Microsoft.AspNetCore.Identity;
-using WebAppTest.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebAppTest.DTO;
 
 public class UserProfileUpdateDTO
 {
+    [EmailAddress]
     public string? NewEmail { get; set; }
+    
+    [StringLength(50)]
     public string? NewUsername { get; set; }
+    
+    [RegularExpression("^[0-9]{12}$")]
     public string? NewPhone { get; set; }
+    
+    [MinLength(6)]
     public string? NewPassword { get; set; }
-        
-    public static void FromDTO(User user, UserProfileUpdateDTO dto)
-    {
-        if (!string.IsNullOrWhiteSpace(dto.NewEmail))
-            user.Email = dto.NewEmail;
-        
-        if (!string.IsNullOrWhiteSpace(dto.NewUsername))
-            user.Username = dto.NewUsername;
-        
-        if (!string.IsNullOrWhiteSpace(dto.NewPhone))
-            user.Phone = dto.NewPhone;
-        
-        if (!string.IsNullOrWhiteSpace(dto.NewPassword))
-            user.PasswordHash = new PasswordHasher<User>()
-                .HashPassword(user, dto.NewPassword);
-    }
 }

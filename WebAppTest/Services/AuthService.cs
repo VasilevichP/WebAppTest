@@ -3,6 +3,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -15,12 +16,10 @@ namespace WebAppTest.Services;
 
 public class AuthService(AppDbContext context, IConfiguration configuration) : IAuthService
 {
-    public async Task<UserBriefDTO> RegisterAsync(UserAuthDTO request)
+    public async Task<UserBaseDTO> RegisterAsync(UserAuthDTO request)
     {
-        if (await context.Users.AnyAsync((u => u.Email == request.Email)))
-        {
+        if (await context.Users.AnyAsync(u => u.Email == request.Email))
             throw new HttpException(HttpStatusCode.BadRequest,"Данная почта уже используется");
-        }
         var user = new User();
         var hashedPassword = new PasswordHasher<User>()
             .HashPassword(user, request.Password);
@@ -29,24 +28,15 @@ public class AuthService(AppDbContext context, IConfiguration configuration) : I
         user.PasswordHash = hashedPassword;
         user.Role = (await context.Users.AnyAsync(u => u.Role == "Admin")? "User" : "Admin");
          context.Users.Add(user);
-         try
-         {
-             var x = await context.SaveChangesAsync();
-         }
-         catch (DbUpdateException)
-         {
-            throw new HttpException(HttpStatusCode.BadRequest,"Возникла ошибка при регистрации");   
-         }
-        return UserBriefDTO.ToDTO(user);
+         if(await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.InternalServerError,"Возникла ошибка при регистрации");  
+        return user.Adapt<UserBaseDTO>();
     }
 
     public async Task<TokenResponseDTO> LoginAsync(UserAuthDTO request)
     {
-        var user = await context.Users.FirstOrDefaultAsync((u => u.Email == request.Email));
-        if (user is null)
-        {
+        var user = await context.Users.FirstOrDefaultAsync((u => u.Email == request.Email)) ??
             throw new HttpException(HttpStatusCode.BadRequest,"Неправильный логин и/или пароль");
-        }
 
         if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
             == PasswordVerificationResult.Failed)
@@ -57,6 +47,14 @@ public class AuthService(AppDbContext context, IConfiguration configuration) : I
         return await CreateTokenResponseDto(user);
     }
 
+    public async Task<TokenResponseDTO> RefreshTokensAsync(RefreshTokenRequestDTO request)
+    {
+        var user = await ValidateRefreshTokenAsync(request.UserId,request.RefreshToken)??
+            throw new HttpException(HttpStatusCode.BadRequest,"Пользователь не найден");
+
+        return await CreateTokenResponseDto(user);
+    }
+    
     private async Task<TokenResponseDTO> CreateTokenResponseDto(User user)
     {
         return new TokenResponseDTO()
@@ -64,17 +62,6 @@ public class AuthService(AppDbContext context, IConfiguration configuration) : I
             AccessToken = CreateToken(user),
             RefreshToken = await GenerateAndSaveRefreshTokenAsync(user)
         };
-    }
-
-    public async Task<TokenResponseDTO> RefreshTokensAsync(RefreshTokenRequestDTO request)
-    {
-        var user = await ValidateRefreshTokenAsync(request.UserId,request.RefreshToken);
-        if (user is null)
-        {
-            throw new HttpException(HttpStatusCode.BadRequest,"Пользователь не найден");
-        }
-
-        return await CreateTokenResponseDto(user);
     }
 
     private string CreateToken(User user)
@@ -115,7 +102,8 @@ public class AuthService(AppDbContext context, IConfiguration configuration) : I
         var refreshToken = GenerateRefreshToken();
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = DateTime.Now.AddHours(4);
-        await context.SaveChangesAsync();
+        if(await context.SaveChangesAsync() ==0)
+            throw new HttpException(HttpStatusCode.InternalServerError,"Возникла ошибка при обновлении токена");
         return refreshToken; 
     }
 
@@ -123,9 +111,7 @@ public class AuthService(AppDbContext context, IConfiguration configuration) : I
     {
         var user = await context.Users.FindAsync(userId);
         if (user is null || refreshToken != user.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
-        {
             throw new HttpException(HttpStatusCode.BadRequest,"Возникла ошибка при обновлении токена");
-        }
         
         return user;
     }

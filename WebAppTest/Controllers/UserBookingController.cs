@@ -1,9 +1,11 @@
+using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using WebAppTest.DTO;
 using WebAppTest.Entities;
+using WebAppTest.Exceptions;
 using WebAppTest.Services;
 
 namespace WebAppTest.Controllers;
@@ -14,18 +16,19 @@ namespace WebAppTest.Controllers;
 [EnableCors("CORSSpecifications")]
 public class UserBookingController(IBookingService service):ControllerBase
 {
-    [HttpPost("book")]
-    public async Task<IActionResult> Book(BookingCreateDto dto)
+    [HttpPost]
+    public async Task<IActionResult> CreateBooking(BookingCreateDto dto)
     {
-        dto.UserId = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        dto.UserId = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier) ??  
+            throw new HttpException(HttpStatusCode.NotFound,"Пользователь не найден"));
         var booking = await service.CreateBookingAsync(dto);
         return Ok(booking);
     }
     
-    [HttpPatch("cancel")]
-    public async Task<IActionResult> Cancel(Guid id, BookingUpdateDTO dto)
+    [HttpPatch]
+    public async Task<IActionResult> CancelBooking(Guid id)
     {
-        var booking = await service.AdminUpdateAsync(id,dto);
-        return (booking==null)? NotFound("Бронирование не найдено"):Ok(booking);
+        var booking = await service.CancelAsync(id);
+        return Ok(booking);
     }
 }

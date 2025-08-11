@@ -1,5 +1,5 @@
 using System.Net;
-using Microsoft.AspNetCore.Identity;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTO;
@@ -10,13 +10,13 @@ namespace WebAppTest.Services;
 
 public class UserService(AppDbContext context) : IUserService
 {
-    public async Task<List<UserBriefDTO>> GetAllUsers()
+    public async Task<List<UserBaseDTO>> GetAllUsers()
     {
         var users = await context.Users.Where(u => u.Role=="User").ToListAsync();
-        return users.Select(UserBriefDTO.ToDTO).ToList();
+        return users.Adapt<List<UserBaseDTO>>();
     }
 
-    public async Task<List<UserBriefDTO>> GetAllUsersFiltered(FilterUsersDTO filter)
+    public async Task<List<UserBaseDTO>> GetAllUsersFiltered(FilterUsersDTO filter)
     {
         var query = context.Users.AsQueryable();
 
@@ -31,25 +31,16 @@ public class UserService(AppDbContext context) : IUserService
         }
         var users = await query
             .ToListAsync();
-        return users.Select(UserBriefDTO.ToDTO).ToList();
+        return users.Adapt<List<UserBaseDTO>>();
     }
 
-    public async Task<UserProfileDTO?> GetProfileAsync(Guid userId)
+    public async Task<UserProfileDTO> GetProfileAsync(Guid userId)
     {
-        var user = await GetUserAsync(userId);
-        if (user == null) 
+        var user = await GetUserAsync(userId)??
             throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
-        return UserProfileDTO.ToDTO(user);
+        return user.Adapt<UserProfileDTO>();
     }
-
-    public async Task<UserAdminDTO> GetProfileForAdminAsync(Guid userId)
-    {
-        var user = await GetUserAsync(userId);
-        if (user == null) 
-            throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
-        return UserAdminDTO.ToDTO(user);
-    }
-
+    
     private async Task<User?> GetUserAsync(Guid id)
     {
         var user = await context.Users
@@ -61,28 +52,23 @@ public class UserService(AppDbContext context) : IUserService
 
     public async Task<UserProfileDTO> UpdateProfileAsync(Guid userId, UserProfileUpdateDTO dto)
     {
-        var user = await context.Users
-            .Include(u => u.Bookings).ThenInclude(b => b.Quest)
-            .Include(u => u.Reviews).ThenInclude(r => r.Quest)
-            .FirstOrDefaultAsync(u => u.Id == userId);
-        if (user == null) 
+        var user = await GetUserAsync(userId)??
             throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
 
-        UserProfileUpdateDTO.FromDTO(user, dto);
+        dto.Adapt(user);
         if(await context.SaveChangesAsync() == 0)
             throw new HttpException(HttpStatusCode.BadRequest, "Возникла ошибка при обновлении профиля");
 
-        return UserProfileDTO.ToDTO(user);
+        return user.Adapt<UserProfileDTO>();
     }
 
-    public async Task<bool> DeleteProfileAsync(Guid userId)
+    public async Task DeleteProfileAsync(Guid userId)
     {
-        var user = await context.Users.FindAsync(userId);
-        if (user == null) 
+        var user = await context.Users.FindAsync(userId) ??
             throw new HttpException(HttpStatusCode.NotFound, "Пользователь не найден");
 
         context.Users.Remove(user);
-        await context.SaveChangesAsync();
-        return true;
+        if(await context.SaveChangesAsync() == 0)
+            throw new HttpException(HttpStatusCode.BadRequest, "Возникла ошибка при удалении профиля");
     }
 }

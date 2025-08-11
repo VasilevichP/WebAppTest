@@ -1,24 +1,19 @@
-using WebAppTest.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebAppTest.DTO;
 
 public class BookingCreateDto
 {
+    [Required(ErrorMessage = "Требуется id квеста")]
     public Guid QuestId { get; set; }
     public Guid? UserId { get; set; }
+
+    [Required(ErrorMessage = "Выберите дату")]
     public DateOnly Date { get; set; }
+
+    [Required(ErrorMessage = "Выберите время")]
     public TimeOnly Time { get; set; }
-    public int ParticipantsCount { get; set; }
-    
-    public static Booking FromDTO(BookingCreateDto dto)
-    {
-        return new Booking()
-        {
-            UserId = dto.UserId.Value,
-            QuestId = dto.QuestId,
-            ParticipantsCount = dto.ParticipantsCount,
-            Date = dto.Date,
-            Time = dto.Time
-        };
-    }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Минимум 1 участник")]
+    public int Participants { get; set; }
 }

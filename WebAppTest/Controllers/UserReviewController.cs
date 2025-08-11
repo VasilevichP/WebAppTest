@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -5,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WebAppTest.DTO;
 using WebAppTest.Entities;
+using WebAppTest.Exceptions;
 using WebAppTest.Services;
 
 namespace WebAppTest.Controllers;
@@ -18,7 +20,8 @@ public class UserReviewController(IReviewService service) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateReview([FromBody] ReviewCreateDTO dto)
     {
-        dto.UserId = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        dto.UserId = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier)??  
+                              throw new HttpException(HttpStatusCode.NotFound,"Пользователь не найден"));
         var review = await service.CreateReviewAsync(dto);
         return Ok(review);
     }
@@ -26,7 +29,7 @@ public class UserReviewController(IReviewService service) : ControllerBase
     [HttpDelete]
     public async Task<IActionResult> DeleteReview(Guid id)
     {
-        var isDeleted = await service.DeleteReviewAsync(id);
-        return isDeleted ? Ok("Отзыв был удален") : NotFound("Отзыв не найден");
+        await service.DeleteReviewAsync(id);
+        return Ok();
     }
 }
