@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.InteropServices.JavaScript;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
@@ -63,6 +64,8 @@ public class BookingService(AppDbContext context) : IBookingService
 
     public async Task<BookingDTO> CreateBookingAsync(BookingCreateDto dto)
     {
+        if (dto.Date<DateOnly.FromDateTime(DateTime.Today))
+            throw new HttpException(HttpStatusCode.BadRequest, "Выбрана дата раньше сегодняшней");
         var quest = await context.Quests.FindAsync(dto.QuestId) ??
                     throw new HttpException(HttpStatusCode.NotFound, "Квест не найден");
         var user = (await context.Users.FindAsync(dto.UserId)) ??
